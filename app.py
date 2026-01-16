@@ -408,457 +408,458 @@ def generate_executive_summary(metrics, scenario_df):
     
     return pd.DataFrame(scenarios)
 
-
+def create_app():
 # Initialize Dash app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+    app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 # Sample data
-sample_data = pd.DataFrame({
-    'Fund_ID': ['Fund_A', 'Fund_A', 'Fund_B', 'Fund_B', 'Fund_C', 'Fund_C', 'Fund_A', 'Fund_B'],
-    'Bond_Name': ['Treasury 5Y', 'Corporate 10Y', 'Treasury 3Y', 'Municipal 7Y', 'Corporate 5Y', 'Treasury 10Y', 'Municipal 5Y', 'Corporate 3Y'],
-    'Face_Value': [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000],
-    'Coupon_Rate': [5.0, 6.0, 3.0, 4.5, 5.5, 4.0, 4.2, 3.5],
-    'Years_To_Maturity': [5, 10, 3, 7, 5, 10, 5, 3],
-    'Market_Price': [1044.52, 1035.66, 986.50, 1018.25, 1052.30, 1000.00, 1028.45, 995.20],
-    'Quantity': [10, 5, 15, 8, 12, 6, 8, 10],
-    'Frequency': [2, 2, 2, 2, 2, 2, 2, 2]
-})
+    sample_data = pd.DataFrame({
+        'Fund_ID': ['Fund_A', 'Fund_A', 'Fund_B', 'Fund_B', 'Fund_C', 'Fund_C', 'Fund_A', 'Fund_B'],
+        'Bond_Name': ['Treasury 5Y', 'Corporate 10Y', 'Treasury 3Y', 'Municipal 7Y', 'Corporate 5Y', 'Treasury 10Y', 'Municipal 5Y', 'Corporate 3Y'],
+        'Face_Value': [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000],
+        'Coupon_Rate': [5.0, 6.0, 3.0, 4.5, 5.5, 4.0, 4.2, 3.5],
+        'Years_To_Maturity': [5, 10, 3, 7, 5, 10, 5, 3],
+        'Market_Price': [1044.52, 1035.66, 986.50, 1018.25, 1052.30, 1000.00, 1028.45, 995.20],
+        'Quantity': [10, 5, 15, 8, 12, 6, 8, 10],
+        'Frequency': [2, 2, 2, 2, 2, 2, 2, 2]
+    })
 
 # Layout
-app.layout = dbc.Container([
-    dbc.Row([
-        dbc.Col([
-            html.H1("📊 Bond Portfolio Analysis Tool", className="text-center mb-4 mt-4"),
-            html.Hr()
-        ])
-    ]),
-    
-    # Fund Filter Section
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    dbc.Row([
-                        dbc.Col([
-                            html.Label("🏦 Select Fund:", className="fw-bold mb-2"),
-                            dcc.Dropdown(
-                                id='fund-dropdown',
-                                placeholder="Select a fund...",
-                                clearable=True,
-                                style={'width': '100%'}
-                            )
-                        ], width=4),
-                        dbc.Col([
-                            html.Div(id='fund-info', className="mt-4")
-                        ], width=8)
+    app.layout = dbc.Container([
+        dbc.Row([
+            dbc.Col([
+                html.H1("📊 Bond Portfolio Analysis Tool", className="text-center mb-4 mt-4"),
+                html.Hr()
+            ])
+        ]),
+        
+        # Fund Filter Section
+        dbc.Row([
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardBody([
+                        dbc.Row([
+                            dbc.Col([
+                                html.Label("🏦 Select Fund:", className="fw-bold mb-2"),
+                                dcc.Dropdown(
+                                    id='fund-dropdown',
+                                    placeholder="Select a fund...",
+                                    clearable=True,
+                                    style={'width': '100%'}
+                                )
+                            ], width=4),
+                            dbc.Col([
+                                html.Div(id='fund-info', className="mt-4")
+                            ], width=8)
+                        ])
                     ])
                 ])
             ])
-        ])
-    ], className="mb-4"),
-    
-    # Upload and Data Input Section
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardHeader(html.H4("📁 Data Input")),
-                dbc.CardBody([
-                    dcc.Upload(
-                        id='upload-data',
-                        children=html.Div([
-                            'Drag and Drop or ',
-                            html.A('Select Excel File')
-                        ]),
-                        style={
-                            'width': '100%',
-                            'height': '60px',
-                            'lineHeight': '60px',
-                            'borderWidth': '1px',
-                            'borderStyle': 'dashed',
-                            'borderRadius': '5px',
-                            'textAlign': 'center',
-                            'margin': '10px'
-                        }
-                    ),
-                    html.Div(id='upload-status', className='mt-2'),
-                    html.Hr(),
-                    dbc.Button("Use Sample Data", id='sample-data-btn', color="primary", className="w-100")
-                ])
-            ])
-        ], width=12)
-    ], className="mb-4"),
-    
-    # Portfolio Summary Cards
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H5("💰 Total Value", className="card-title"),
-                    html.H3(id='total-value', className="text-primary")
-                ])
-            ])
-        ], width=3),
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H5("📉 Portfolio DV01", className="card-title"),
-                    html.H3(id='portfolio-dv01', className="text-success")
-                ])
-            ])
-        ], width=3),
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H5("⏱️ Duration", className="card-title"),
-                    html.H3(id='portfolio-duration', className="text-info")
-                ])
-            ])
-        ], width=3),
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H5("📈 Convexity", className="card-title"),
-                    html.H3(id='portfolio-convexity', className="text-warning")
-                ])
-            ])
-        ], width=3)
-    ], className="mb-4"),
-    
-    # Executive Summary
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardHeader(html.H4("📝 Executive Summary")),
-                dbc.CardBody([
-                    html.Div(id='executive-summary')
-                ])
-            ])
-        ])
-    ], className="mb-4"),
-    
-    # Bond Details Table
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardHeader(html.H4("📋 Bond Details")),
-                dbc.CardBody([
-                    html.Div(id='bond-details-table')
-                ])
-            ])
-        ])
-    ], className="mb-4"),
-    
-    # Scenario Analysis
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardHeader(html.H4("🔮 Yield Shift Scenario Analysis")),
-                dbc.CardBody([
-                    dcc.Graph(id='scenario-chart')
-                ])
-            ])
-        ], width=8),
-        dbc.Col([
-            dbc.Card([
-                dbc.CardHeader(html.H4("📊 Scenario Table")),
-                dbc.CardBody([
-                    html.Div(id='scenario-table', style={'maxHeight': '400px', 'overflowY': 'auto'})
-                ])
-            ])
-        ], width=4)
-    ], className="mb-4"),
-    
-    # Data Validation Section - ALWAYS VISIBLE
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardHeader([
-                    html.H4("✅ Data Validation Report"),
-                    html.Small("Scroll here to see validation details", className="text-muted ms-2")
-                ]),
-                dbc.CardBody([
-                    html.Div(id='validation-report', children=[
-                        dbc.Alert([
-                            html.H5("⏳ Loading validation report...", className="alert-heading"),
-                            html.P("Please wait while we validate your data.", className="mb-0")
-                        ], color="info")
+        ], className="mb-4"),
+        
+        # Upload and Data Input Section
+        dbc.Row([
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardHeader(html.H4("📁 Data Input")),
+                    dbc.CardBody([
+                        dcc.Upload(
+                            id='upload-data',
+                            children=html.Div([
+                                'Drag and Drop or ',
+                                html.A('Select Excel File')
+                            ]),
+                            style={
+                                'width': '100%',
+                                'height': '60px',
+                                'lineHeight': '60px',
+                                'borderWidth': '1px',
+                                'borderStyle': 'dashed',
+                                'borderRadius': '5px',
+                                'textAlign': 'center',
+                                'margin': '10px'
+                            }
+                        ),
+                        html.Div(id='upload-status', className='mt-2'),
+                        html.Hr(),
+                        dbc.Button("Use Sample Data", id='sample-data-btn', color="primary", className="w-100")
                     ])
                 ])
-            ], style={'minHeight': '200px'})  # Ensure minimum height
-        ])
-    ], className="mb-4"),
-    
-    # Hidden div to store data
-    dcc.Store(id='portfolio-data'),
-    dcc.Store(id='filtered-data'),
-    dcc.Store(id='validation-results')
-    
-], fluid=True)
+            ], width=12)
+        ], className="mb-4"),
+        
+        # Portfolio Summary Cards
+        dbc.Row([
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardBody([
+                        html.H5("💰 Total Value", className="card-title"),
+                        html.H3(id='total-value', className="text-primary")
+                    ])
+                ])
+            ], width=3),
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardBody([
+                        html.H5("📉 Portfolio DV01", className="card-title"),
+                        html.H3(id='portfolio-dv01', className="text-success")
+                    ])
+                ])
+            ], width=3),
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardBody([
+                        html.H5("⏱️ Duration", className="card-title"),
+                        html.H3(id='portfolio-duration', className="text-info")
+                    ])
+                ])
+            ], width=3),
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardBody([
+                        html.H5("📈 Convexity", className="card-title"),
+                        html.H3(id='portfolio-convexity', className="text-warning")
+                    ])
+                ])
+            ], width=3)
+        ], className="mb-4"),
+        
+        # Executive Summary
+        dbc.Row([
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardHeader(html.H4("📝 Executive Summary")),
+                    dbc.CardBody([
+                        html.Div(id='executive-summary')
+                    ])
+                ])
+            ])
+        ], className="mb-4"),
+        
+        # Bond Details Table
+        dbc.Row([
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardHeader(html.H4("📋 Bond Details")),
+                    dbc.CardBody([
+                        html.Div(id='bond-details-table')
+                    ])
+                ])
+            ])
+        ], className="mb-4"),
+        
+        # Scenario Analysis
+        dbc.Row([
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardHeader(html.H4("🔮 Yield Shift Scenario Analysis")),
+                    dbc.CardBody([
+                        dcc.Graph(id='scenario-chart')
+                    ])
+                ])
+            ], width=8),
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardHeader(html.H4("📊 Scenario Table")),
+                    dbc.CardBody([
+                        html.Div(id='scenario-table', style={'maxHeight': '400px', 'overflowY': 'auto'})
+                    ])
+                ])
+            ], width=4)
+        ], className="mb-4"),
+        
+        # Data Validation Section - ALWAYS VISIBLE
+        dbc.Row([
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardHeader([
+                        html.H4("✅ Data Validation Report"),
+                        html.Small("Scroll here to see validation details", className="text-muted ms-2")
+                    ]),
+                    dbc.CardBody([
+                        html.Div(id='validation-report', children=[
+                            dbc.Alert([
+                                html.H5("⏳ Loading validation report...", className="alert-heading"),
+                                html.P("Please wait while we validate your data.", className="mb-0")
+                            ], color="info")
+                        ])
+                    ])
+                ], style={'minHeight': '200px'})  # Ensure minimum height
+            ])
+        ], className="mb-4"),
+        
+        # Hidden div to store data
+        dcc.Store(id='portfolio-data'),
+        dcc.Store(id='filtered-data'),
+        dcc.Store(id='validation-results')
+        
+    ], fluid=True)
 
 
-# Callbacks
-@app.callback(
-    Output('fund-dropdown', 'options'),
-    Output('fund-dropdown', 'value'),
-    Input('portfolio-data', 'data')
-)
-def update_fund_dropdown(json_data):
-    if not json_data:
-        return [], None
-    
-    df = pd.read_json(io.StringIO(json_data), orient='split')
-    
-    if 'Fund_ID' not in df.columns:
-        return [{'label': 'All Bonds (No Fund ID)', 'value': 'ALL'}], 'ALL'
-    
-    funds = sorted(df['Fund_ID'].unique())
-    options = [{'label': 'All Funds', 'value': 'ALL'}] + [{'label': fund, 'value': fund} for fund in funds]
-    
-    return options, 'ALL'
+    # Callbacks
+    @app.callback(
+        Output('fund-dropdown', 'options'),
+        Output('fund-dropdown', 'value'),
+        Input('portfolio-data', 'data')
+    )
+    def update_fund_dropdown(json_data):
+        if not json_data:
+            return [], None
+        
+        df = pd.read_json(io.StringIO(json_data), orient='split')
+        
+        if 'Fund_ID' not in df.columns:
+            return [{'label': 'All Bonds (No Fund ID)', 'value': 'ALL'}], 'ALL'
+        
+        funds = sorted(df['Fund_ID'].unique())
+        options = [{'label': 'All Funds', 'value': 'ALL'}] + [{'label': fund, 'value': fund} for fund in funds]
+        
+        return options, 'ALL'
 
 
-@app.callback(
-    Output('filtered-data', 'data'),
-    Output('fund-info', 'children'),
-    Input('portfolio-data', 'data'),
-    Input('fund-dropdown', 'value')
-)
-def filter_by_fund(json_data, selected_fund):
-    if not json_data:
-        return None, ""
-    
-    df = pd.read_json(io.StringIO(json_data), orient='split')
-    
-    # If no Fund_ID column, return all data
-    if 'Fund_ID' not in df.columns or selected_fund == 'ALL' or selected_fund is None:
-        total_bonds = len(df)
-        total_funds = len(df['Fund_ID'].unique()) if 'Fund_ID' in df.columns else 1
+    @app.callback(
+        Output('filtered-data', 'data'),
+        Output('fund-info', 'children'),
+        Input('portfolio-data', 'data'),
+        Input('fund-dropdown', 'value')
+    )
+    def filter_by_fund(json_data, selected_fund):
+        if not json_data:
+            return None, ""
+        
+        df = pd.read_json(io.StringIO(json_data), orient='split')
+        
+        # If no Fund_ID column, return all data
+        if 'Fund_ID' not in df.columns or selected_fund == 'ALL' or selected_fund is None:
+            total_bonds = len(df)
+            total_funds = len(df['Fund_ID'].unique()) if 'Fund_ID' in df.columns else 1
+            info = html.Div([
+                html.Span(f"📊 Showing all funds: ", className="fw-bold"),
+                html.Span(f"{total_bonds} bonds across {total_funds} fund(s)")
+            ])
+            return df.to_json(date_format='iso', orient='split'), info
+        
+        # Filter by selected fund
+        filtered_df = df[df['Fund_ID'] == selected_fund]
+        
+        if filtered_df.empty:
+            info = dbc.Alert(f"⚠️ No bonds found for {selected_fund}", color="warning")
+            return df.to_json(date_format='iso', orient='split'), info
+        
+        # Display fund info
+        num_bonds = len(filtered_df)
+        total_quantity = filtered_df['Quantity'].sum()
         info = html.Div([
-            html.Span(f"📊 Showing all funds: ", className="fw-bold"),
-            html.Span(f"{total_bonds} bonds across {total_funds} fund(s)")
+            html.Span(f"🏦 Fund: ", className="fw-bold"),
+            html.Span(f"{selected_fund} | "),
+            html.Span(f"{num_bonds} bonds | "),
+            html.Span(f"Total quantity: {total_quantity:.0f}")
         ])
-        return df.to_json(date_format='iso', orient='split'), info
-    
-    # Filter by selected fund
-    filtered_df = df[df['Fund_ID'] == selected_fund]
-    
-    if filtered_df.empty:
-        info = dbc.Alert(f"⚠️ No bonds found for {selected_fund}", color="warning")
-        return df.to_json(date_format='iso', orient='split'), info
-    
-    # Display fund info
-    num_bonds = len(filtered_df)
-    total_quantity = filtered_df['Quantity'].sum()
-    info = html.Div([
-        html.Span(f"🏦 Fund: ", className="fw-bold"),
-        html.Span(f"{selected_fund} | "),
-        html.Span(f"{num_bonds} bonds | "),
-        html.Span(f"Total quantity: {total_quantity:.0f}")
-    ])
-    
-    return filtered_df.to_json(date_format='iso', orient='split'), info
-@app.callback(
-    Output('portfolio-data', 'data'),
-    Output('upload-status', 'children'),
-    Output('validation-results', 'data'),
-    Input('upload-data', 'contents'),
-    Input('sample-data-btn', 'n_clicks'),
-    State('upload-data', 'filename')
-)
-def load_data(contents, n_clicks, filename):
-    ctx = dash.callback_context
-    
-    # Initial load - validate sample data
-    if not ctx.triggered:
-        is_valid, errors, warnings = validate_portfolio_data(sample_data)
-        validation = {
-            'is_valid': is_valid, 
-            'errors': errors, 
-            'warnings': warnings, 
-            'filename': 'Sample Data',
-            'timestamp': pd.Timestamp.now().isoformat()
-        }
-        return sample_data.to_json(date_format='iso', orient='split'), "", validation
-    
-    trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    
-    if trigger_id == 'sample-data-btn':
-        is_valid, errors, warnings = validate_portfolio_data(sample_data)
-        validation = {
-            'is_valid': is_valid, 
-            'errors': errors, 
-            'warnings': warnings, 
-            'filename': 'Sample Data',
-            'timestamp': pd.Timestamp.now().isoformat()
-        }
-        return (
-            sample_data.to_json(date_format='iso', orient='split'), 
-            dbc.Alert("✓ Sample data loaded successfully. See validation report below.", color="success"),
-            validation
-        )
-    
-    if trigger_id == 'upload-data' and contents:
-        try:
-            content_type, content_string = contents.split(',')
-            decoded = base64.b64decode(content_string)
-            df = pd.read_excel(io.BytesIO(decoded))
-            
-            # Validate data
-            is_valid, errors, warnings = validate_portfolio_data(df)
+        
+        return filtered_df.to_json(date_format='iso', orient='split'), info
+    @app.callback(
+        Output('portfolio-data', 'data'),
+        Output('upload-status', 'children'),
+        Output('validation-results', 'data'),
+        Input('upload-data', 'contents'),
+        Input('sample-data-btn', 'n_clicks'),
+        State('upload-data', 'filename')
+    )
+    def load_data(contents, n_clicks, filename):
+        ctx = dash.callback_context
+        
+        # Initial load - validate sample data
+        if not ctx.triggered:
+            is_valid, errors, warnings = validate_portfolio_data(sample_data)
             validation = {
                 'is_valid': is_valid, 
                 'errors': errors, 
                 'warnings': warnings, 
-                'filename': filename,
+                'filename': 'Sample Data',
                 'timestamp': pd.Timestamp.now().isoformat()
             }
-            
-            if not is_valid:
+            return sample_data.to_json(date_format='iso', orient='split'), "", validation
+        
+        trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        
+        if trigger_id == 'sample-data-btn':
+            is_valid, errors, warnings = validate_portfolio_data(sample_data)
+            validation = {
+                'is_valid': is_valid, 
+                'errors': errors, 
+                'warnings': warnings, 
+                'filename': 'Sample Data',
+                'timestamp': pd.Timestamp.now().isoformat()
+            }
+            return (
+                sample_data.to_json(date_format='iso', orient='split'), 
+                dbc.Alert("✓ Sample data loaded successfully. See validation report below.", color="success"),
+                validation
+            )
+        
+        if trigger_id == 'upload-data' and contents:
+            try:
+                content_type, content_string = contents.split(',')
+                decoded = base64.b64decode(content_string)
+                df = pd.read_excel(io.BytesIO(decoded))
+                
+                # Validate data
+                is_valid, errors, warnings = validate_portfolio_data(df)
+                validation = {
+                    'is_valid': is_valid, 
+                    'errors': errors, 
+                    'warnings': warnings, 
+                    'filename': filename,
+                    'timestamp': pd.Timestamp.now().isoformat()
+                }
+                
+                if not is_valid:
+                    error_msg = html.Div([
+                        html.H5("❌ Data Validation Failed", className="alert-heading"),
+                        html.P("Cannot load data. Please scroll down to see the detailed validation report.", className="mb-0")
+                    ])
+                    # Return sample data so app doesn't break, but with validation errors
+                    return (
+                        sample_data.to_json(date_format='iso', orient='split'), 
+                        dbc.Alert(error_msg, color="danger"),
+                        validation
+                    )
+                
+                # Show success or warnings
+                if warnings:
+                    warning_msg = html.Div([
+                        html.H5(f"✓ {filename} loaded successfully", className="alert-heading"),
+                        html.P("⚠️ Some warnings were found. Scroll down to see the detailed validation report.", className="mb-0")
+                    ])
+                    return df.to_json(date_format='iso', orient='split'), dbc.Alert(warning_msg, color="warning"), validation
+                
+                success_msg = f"✓ {filename} loaded successfully with no issues. See validation report below."
+                return df.to_json(date_format='iso', orient='split'), dbc.Alert(success_msg, color="success"), validation
+                
+            except Exception as e:
                 error_msg = html.Div([
-                    html.H5("❌ Data Validation Failed", className="alert-heading"),
-                    html.P("Cannot load data. Please scroll down to see the detailed validation report.", className="mb-0")
+                    html.H5("❌ Error Loading File", className="alert-heading"),
+                    html.P(f"Error: {str(e)}", className="mb-0")
                 ])
-                # Return sample data so app doesn't break, but with validation errors
+                validation = {
+                    'is_valid': False, 
+                    'errors': [str(e)], 
+                    'warnings': [], 
+                    'filename': filename if filename else 'Unknown',
+                    'timestamp': pd.Timestamp.now().isoformat()
+                }
                 return (
                     sample_data.to_json(date_format='iso', orient='split'), 
                     dbc.Alert(error_msg, color="danger"),
                     validation
                 )
-            
-            # Show success or warnings
-            if warnings:
-                warning_msg = html.Div([
-                    html.H5(f"✓ {filename} loaded successfully", className="alert-heading"),
-                    html.P("⚠️ Some warnings were found. Scroll down to see the detailed validation report.", className="mb-0")
-                ])
-                return df.to_json(date_format='iso', orient='split'), dbc.Alert(warning_msg, color="warning"), validation
-            
-            success_msg = f"✓ {filename} loaded successfully with no issues. See validation report below."
-            return df.to_json(date_format='iso', orient='split'), dbc.Alert(success_msg, color="success"), validation
-            
-        except Exception as e:
-            error_msg = html.Div([
-                html.H5("❌ Error Loading File", className="alert-heading"),
-                html.P(f"Error: {str(e)}", className="mb-0")
-            ])
-            validation = {
-                'is_valid': False, 
-                'errors': [str(e)], 
-                'warnings': [], 
-                'filename': filename if filename else 'Unknown',
-                'timestamp': pd.Timestamp.now().isoformat()
-            }
-            return (
-                sample_data.to_json(date_format='iso', orient='split'), 
-                dbc.Alert(error_msg, color="danger"),
-                validation
-            )
-    
-    # Fallback
-    validation = {
-        'is_valid': True, 
-        'errors': [], 
-        'warnings': [], 
-        'filename': 'Sample Data',
-        'timestamp': pd.Timestamp.now().isoformat()
-    }
-    return sample_data.to_json(date_format='iso', orient='split'), "", validation
+        
+        # Fallback
+        validation = {
+            'is_valid': True, 
+            'errors': [], 
+            'warnings': [], 
+            'filename': 'Sample Data',
+            'timestamp': pd.Timestamp.now().isoformat()
+        }
+        return sample_data.to_json(date_format='iso', orient='split'), "", validation
 
 
-@app.callback(
-    Output('total-value', 'children'),
-    Output('portfolio-dv01', 'children'),
-    Output('portfolio-duration', 'children'),
-    Output('portfolio-convexity', 'children'),
-    Output('executive-summary', 'children'),
-    Output('bond-details-table', 'children'),
-    Output('scenario-chart', 'figure'),
-    Output('scenario-table', 'children'),
-    Input('filtered-data', 'data')
-)
-def update_dashboard(json_data):
-    if not json_data:
-        return "", "", "", "", "", "", {}, ""
-    
-    df = pd.read_json(io.StringIO(json_data), orient='split')
-    
-    if df.empty:
-        empty_msg = dbc.Alert("No bonds to display. Please select a different fund or upload data.", color="info")
-        return "", "", "", "", empty_msg, "", {}, ""
-    
-    metrics = calculate_portfolio_metrics(df)
-    
-    # Summary cards
-    total_value = f"${metrics['total_value']:,.2f}"
-    portfolio_dv01 = f"${metrics['portfolio_dv01']:,.2f}"
-    portfolio_duration = f"{metrics['portfolio_duration']:.2f} yrs"
-    portfolio_convexity = f"{metrics['portfolio_convexity']:.2f}"
-    
-    # Scenario analysis
-    scenario_df = generate_scenario_data(metrics['bonds'])
-    
-    # Executive summary
-    executive_summary = generate_executive_summary(metrics, scenario_df)
-    
-    # Bond details table
-    bond_table = dash_table.DataTable(
-        data=metrics['bond_details'].to_dict('records'),
-        columns=[{'name': i, 'id': i} for i in metrics['bond_details'].columns],
-        style_table={'overflowX': 'auto'},
-        style_cell={'textAlign': 'left', 'padding': '10px'},
-        style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'},
-        style_data_conditional=[
-            {'if': {'row_index': 'odd'}, 'backgroundColor': 'rgb(248, 248, 248)'}
-        ]
+    @app.callback(
+        Output('total-value', 'children'),
+        Output('portfolio-dv01', 'children'),
+        Output('portfolio-duration', 'children'),
+        Output('portfolio-convexity', 'children'),
+        Output('executive-summary', 'children'),
+        Output('bond-details-table', 'children'),
+        Output('scenario-chart', 'figure'),
+        Output('scenario-table', 'children'),
+        Input('filtered-data', 'data')
     )
-    
-    # Scenario chart
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=scenario_df['Yield Shift (bps)'],
-        y=scenario_df['Portfolio Value'],
-        mode='lines+markers',
-        name='Portfolio Value',
-        line=dict(color='blue', width=3),
-        marker=dict(size=8)
-    ))
-    
-    # Add horizontal line for current value
-    current_value = metrics['total_value']
-    fig.add_hline(y=current_value, line_dash="dash", line_color="red", 
-                  annotation_text="Current Value", annotation_position="right")
-    
-    fig.update_layout(
-        title='Portfolio Value vs Yield Shift',
-        xaxis_title='Yield Shift (bps)',
-        yaxis_title='Portfolio Value ($)',
-        hovermode='x unified',
-        template='plotly_white',
-        height=400
-    )
-    
-    # Scenario table
-    scenario_table = dash_table.DataTable(
-        data=scenario_df.to_dict('records'),
-        columns=[
-            {'name': 'Shift (bps)', 'id': 'Yield Shift (bps)'},
-            {'name': 'Value', 'id': 'Portfolio Value', 'type': 'numeric', 'format': {'specifier': '$,.2f'}},
-            {'name': 'Change', 'id': 'Value Change', 'type': 'numeric', 'format': {'specifier': '$,.2f'}},
-            {'name': 'Change %', 'id': 'Change (%)', 'type': 'numeric', 'format': {'specifier': '.2f'}}
-        ],
-        style_cell={'textAlign': 'right', 'padding': '8px', 'fontSize': '12px'},
-        style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'},
-        style_data_conditional=[
-            {'if': {'filter_query': '{Change (%)} < 0', 'column_id': 'Change (%)'}, 'color': 'red'},
-            {'if': {'filter_query': '{Change (%)} > 0', 'column_id': 'Change (%)'}, 'color': 'green'}
-        ]
-    )
-    
-    return total_value, portfolio_dv01, portfolio_duration, portfolio_convexity, executive_summary, bond_table, fig, scenario_table
-
+    def update_dashboard(json_data):
+        if not json_data:
+            return "", "", "", "", "", "", {}, ""
+        
+        df = pd.read_json(io.StringIO(json_data), orient='split')
+        
+        if df.empty:
+            empty_msg = dbc.Alert("No bonds to display. Please select a different fund or upload data.", color="info")
+            return "", "", "", "", empty_msg, "", {}, ""
+        
+        metrics = calculate_portfolio_metrics(df)
+        
+        # Summary cards
+        total_value = f"${metrics['total_value']:,.2f}"
+        portfolio_dv01 = f"${metrics['portfolio_dv01']:,.2f}"
+        portfolio_duration = f"{metrics['portfolio_duration']:.2f} yrs"
+        portfolio_convexity = f"{metrics['portfolio_convexity']:.2f}"
+        
+        # Scenario analysis
+        scenario_df = generate_scenario_data(metrics['bonds'])
+        
+        # Executive summary
+        executive_summary = generate_executive_summary(metrics, scenario_df)
+        
+        # Bond details table
+        bond_table = dash_table.DataTable(
+            data=metrics['bond_details'].to_dict('records'),
+            columns=[{'name': i, 'id': i} for i in metrics['bond_details'].columns],
+            style_table={'overflowX': 'auto'},
+            style_cell={'textAlign': 'left', 'padding': '10px'},
+            style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'},
+            style_data_conditional=[
+                {'if': {'row_index': 'odd'}, 'backgroundColor': 'rgb(248, 248, 248)'}
+            ]
+        )
+        
+        # Scenario chart
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=scenario_df['Yield Shift (bps)'],
+            y=scenario_df['Portfolio Value'],
+            mode='lines+markers',
+            name='Portfolio Value',
+            line=dict(color='blue', width=3),
+            marker=dict(size=8)
+        ))
+        
+        # Add horizontal line for current value
+        current_value = metrics['total_value']
+        fig.add_hline(y=current_value, line_dash="dash", line_color="red", 
+                    annotation_text="Current Value", annotation_position="right")
+        
+        fig.update_layout(
+            title='Portfolio Value vs Yield Shift',
+            xaxis_title='Yield Shift (bps)',
+            yaxis_title='Portfolio Value ($)',
+            hovermode='x unified',
+            template='plotly_white',
+            height=400
+        )
+        
+        # Scenario table
+        scenario_table = dash_table.DataTable(
+            data=scenario_df.to_dict('records'),
+            columns=[
+                {'name': 'Shift (bps)', 'id': 'Yield Shift (bps)'},
+                {'name': 'Value', 'id': 'Portfolio Value', 'type': 'numeric', 'format': {'specifier': '$,.2f'}},
+                {'name': 'Change', 'id': 'Value Change', 'type': 'numeric', 'format': {'specifier': '$,.2f'}},
+                {'name': 'Change %', 'id': 'Change (%)', 'type': 'numeric', 'format': {'specifier': '.2f'}}
+            ],
+            style_cell={'textAlign': 'right', 'padding': '8px', 'fontSize': '12px'},
+            style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'},
+            style_data_conditional=[
+                {'if': {'filter_query': '{Change (%)} < 0', 'column_id': 'Change (%)'}, 'color': 'red'},
+                {'if': {'filter_query': '{Change (%)} > 0', 'column_id': 'Change (%)'}, 'color': 'green'}
+            ]
+        )
+        
+        return total_value, portfolio_dv01, portfolio_duration, portfolio_convexity, executive_summary, bond_table, fig, scenario_table
+    return app
 
 if __name__ == '__main__':
+    app=create_app()
     import os
-    port = int(os.environ.get('PORT',8000))
+    port = int(os.environ.get('PORT',5001))
     app.run(debug=False, host='0.0.0.0',port=port)
-    
+ 
