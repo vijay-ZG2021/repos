@@ -857,9 +857,13 @@ def create_app():
         return total_value, portfolio_dv01, portfolio_duration, portfolio_convexity, executive_summary, bond_table, fig, scenario_table
     return app
 
+
+app = create_app()
+server = app.server  # This is what Gunicorn needs
+
 if __name__ == '__main__':
-    app=create_app()
     import os
-    port = int(os.environ.get('PORT',5001))
-    app.run(debug=False, host='0.0.0.0',port=port)
+    port = int(os.environ.get('PORT', 5001))
+    app.run(debug=False, host='0.0.0.0', port=port)
  
+
